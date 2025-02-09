@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso a Datos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+            color: #fff;
+            text-align: center;
+        }
+        h1 {
+            font-size: 26px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            backdrop-filter: blur(10px);
+            width: 300px;
+        }
+        .hidden {
+            display: none;
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 5px;
+        }
+        input {
+            background: rgba(255, 255, 255, 0.8);
+            font-size: 16px;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:disabled {
+            background-color: #888;
+            cursor: not-allowed;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        #countdown {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #ffd700;
+        }
+        .creator {
+            font-size: 14px;
+            margin-top: 10px;
+            color: #ffd700;
+        }
+    </style>
+</head>
+<body>
+    <h1>Usuario SIDPOL - ESINPOL</h1>
+    <p class="creator">Creado por @ItachiUchiha_TK</p>
+
+    <div id="login" class="container">
+        <h2>Ingrese el Código</h2>
+        <input type="password" id="password" placeholder="Código de acceso">
+        <button onclick="checkPassword()">Acceder</button>
+    </div>
+
+    <div id="content" class="container hidden">
+        <h2>Datos del Usuario</h2>
+        <p><strong>Usuario:</strong> <span id="user">Cargando...</span></p>
+        <p><strong>Contraseña:</strong> <span id="passwordData">Cargando...</span></p>
+        <p><strong>Token:</strong> <span id="token">Cargando...</span></p>
+        <button id="refreshTokenBtn" onclick="refreshToken()">Actualizar Token</button>
+        <p id="countdown" class="hidden">Espere 30 segundos...</p>
+        <p class="creator">Creado por @ItachiUchiha_TK</p>
+    </div>
+
+    <script>
+        const ACCESS_CODE = "1234"; // Código de acceso
+        let tokenCooldown = false;
+
+        function checkPassword() {
+            const inputCode = document.getElementById("password").value;
+            if (inputCode === ACCESS_CODE) {
+                document.getElementById("login").classList.add("hidden");
+                document.getElementById("content").classList.remove("hidden");
+                fetchUserData();
+            } else {
+                alert("Código incorrecto");
+            }
+        }
+
+        async function fetchUserData() {
+            try {
+                const response = await fetch("http://localhost:3000/fetch-data");
+                const data = await response.json();
+                document.getElementById("user").textContent = data.usuario;
+                document.getElementById("passwordData").textContent = data.contraseña;
+                document.getElementById("token").textContent = data.token;
+            } catch (error) {
+                console.error("Error al obtener los datos:", error);
+            }
+        }
+
+        async function refreshToken() {
+            if (tokenCooldown) return;
+
+            tokenCooldown = true;
+            document.getElementById("refreshTokenBtn").disabled = true;
+            document.getElementById("countdown").classList.remove("hidden");
+
+            try {
+                const response = await fetch("http://localhost:3000/fetch-data");
+                const data = await response.json();
+                document.getElementById("token").textContent = data.token;
+            } catch (error) {
+                console.error("Error al obtener el token:", error);
+            }
+
+            let timeLeft = 30;
+            document.getElementById("countdown").textContent = `Espere ${timeLeft} segundos...`;
+
+            let countdownInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById("countdown").textContent = `Espere ${timeLeft} segundos...`;
+
+                if (timeLeft <= 0) {
+                    clearInterval(countdownInterval);
+                    document.getElementById("countdown").classList.add("hidden");
+                    document.getElementById("refreshTokenBtn").disabled = false;
+                    tokenCooldown = false;
+                }
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
